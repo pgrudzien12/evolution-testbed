@@ -1,3 +1,6 @@
+from numpy.random import randint
+import numpy as np
+
 def count_neighbours(grid, position):
     x,y = position
     neighbour_cells = [(x - 1, y - 1), (x - 1, y + 0), (x - 1, y + 1),
@@ -12,26 +15,25 @@ def count_neighbours(grid, position):
                 pass
     return count
 
-def make_empty_grid(x, y):
-    grid = []
-    for r in range(x):
-        row = []
-        for c in range(y):
-            row.append(0)
-        grid.append(row)
-    return grid
-
-def evolve(grid):
-    x = len(grid)
-    y = len(grid[0])
-    new_grid = make_empty_grid(x, y)
-    for r in range(x):
-        for c in range(y):
-            cell = grid[r][c]
-            neighbours = count_neighbours(grid, (r, c))
-            new_grid[r][c] = 1 if evolve_cell(cell, neighbours) else 0
-    return new_grid
-
 def evolve_cell(alive, neighbours):
     return neighbours == 3 or (alive and neighbours == 2)
+
+class Evolution():
+    def __init__(self, world_size) -> None:
+        self.world_size = world_size
+
+    def initialize(self, grid):
+        g = randint(0,2,size=grid.shape)
+        np.copyto(grid, g)
+
+
+    def evolve(self, grid, buffer):
+        x = len(grid)
+        y = len(grid[0])
+        buffer.fill(0)
+        for r in range(x):
+            for c in range(y):
+                cell = grid[r][c]
+                neighbours = count_neighbours(grid, (r, c))
+                buffer[r][c] = 1 if evolve_cell(cell, neighbours) else 0
 

@@ -1,8 +1,8 @@
-from time import sleep
-from random import randint
+from time import sleep, perf_counter
 import sys
 import pygame
-from gol import evolve
+import numpy as np
+from gol import Evolution
 
 def createScreen():
     print('available resolutions', pygame.display.list_modes(0))
@@ -21,17 +21,16 @@ def createScreen():
         (screen_width, screen_height), options)
     print("screen created, size is:", screen.get_size())
     return screen
-    
 
 
-def make_random_grid(x, y):
-        grid = []
-        for r in range(int(x)):
-            row = []
-            for c in range(int(y)):
-                row.append(randint(0,1))
-            grid.append(row)
-        return grid
+def make_empty_grid(x, y):
+    grid = []
+    for r in range(x):
+        row = []
+        for c in range(y):
+            row.append(0)
+        grid.append(row)
+    return np.array(grid)
 
 BLACK = (0, 0, 0)
 
@@ -45,18 +44,18 @@ def draw_block(x, y, alive_color, cell_size):
 #this is where we register our event listeners
 #yes, we're just calling methods
 #@todo create proper event listeners
-def handleInputEvents(xlen, ylen):
+def handleInputEvents():
+    reinitialize = False
     for event in pygame.event.get():
         if(event.type == pygame.MOUSEBUTTONDOWN):
             if(event.button==1): #left click
-                global world
-                world = make_random_grid(xlen, ylen)
+                reinitialize = True
         if(event.type == pygame.KEYDOWN):
             sys.exit(0) #quit on any key
         if (event.type == pygame.QUIT):  #pygame issues a quit event, for e.g. by closing the window
             print("quitting")
             sys.exit(0)
-            
+    return reinitialize
             
 def main():
     world_size = (100,100)
@@ -72,22 +71,46 @@ def main():
     cell_size = (xmax // world_size[0], ymax // world_size[1])
     xlen = xmax // cell_size[0]
     ylen = ymax // cell_size[1]
-    global world
-    world = make_random_grid(xlen, ylen)
+    #global world
+    buf1 = make_empty_grid(xlen, ylen)
+    buf2 = make_empty_grid(xlen, ylen)
+    first_buf = True
+    e = Evolution(world_size)
+    e.initialize(buf1)
+    duration = 0
+    i = 0
     while True:
-            handleInputEvents(xlen, ylen)
-            clock.tick(40)
-            for x in range(xlen):
-                for y in range(ylen):
-                    alive = world[x][y]
-                    cell_number += 1
-                    cell_color = alive_color if alive else BLACK
-                    draw_block(x, y, cell_color, cell_size)
+            i+=1
+            if handleInputEvents():
+                buf1 = make_empty_grid(xlen, ylen)
+                buf2 = make_empty_grid(xlen, ylen)
+                e.initialize(buf1)
+                first_buf = True
+
+            if first_buf:
+                world = buf1
+                buf = buf2
+            else:
+                world = buf2
+                buf = buf1
+
+            alive_w = np.argwhere(world > 0)
+            screen.fill((BLACK))
+            for x,y in alive_w:
+                draw_block(x, y, alive_color, cell_size)
+
             pygame.display.flip()
+
             h = (h + 2) % 360
             alive_color.hsva = (h, 100, 100)
-            world = evolve(world)
-            cell_number = 0
+            
+            start = perf_counter()
+            e.evolve(world, buf)
+                
+            duration += perf_counter() - start
+            print("Perf:", duration / i)
+            first_buf = not first_buf
+            clock.tick(40)
 
 if __name__ == '__main__':
     main()
