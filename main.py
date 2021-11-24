@@ -4,6 +4,9 @@ import pygame
 import numpy as np
 from evolution import Evolution
 
+# started from this gist: https://gist.github.com/bennuttall/6952575
+# big thanks for the original author: Ben Nuttall
+
 def createScreen():
     screen_width, screen_height = (600,600)
     options = pygame.HWSURFACE | pygame.DOUBLEBUF        
@@ -19,7 +22,7 @@ def make_empty_grid(x, y):
 
 BLACK = (0, 0, 0)
 
-def draw_block(x, y, XY, alive_color, size):
+def draw_block(screen, x, y, XY, alive_color, size):
     center_point = (XY[0][x], XY[1][y])
     pygame.draw.circle(screen, alive_color, center_point, size)
 
@@ -52,11 +55,9 @@ def main():
     world_size = (300,300)
     pygame.init()
     clock = pygame.time.Clock()
-    global screen 
     screen = createScreen()
     (xmax,ymax)= screen.get_size()
     h = 0
-    cell_number = 0
     alive_color = pygame.Color(0,0,0)
     alive_color.hsva = [h, 100, 100]
     cell_size = np.array((xmax // world_size[0], ymax // world_size[1]))
@@ -79,7 +80,6 @@ def main():
             first_buf = True
             screen.fill((BLACK))
 
-
         handle = perf_counter()
 
         if first_buf:
@@ -96,9 +96,9 @@ def main():
         csize = min(cell_size) / 2
         for x,y in change:
             if world[x,y] > 0: #born
-                draw_block(x, y, XY, alive_color, csize)
+                draw_block(screen, x, y, XY, alive_color, csize)
             else: # died
-                draw_block(x, y, XY, BLACK, csize)
+                draw_block(screen, x, y, XY, BLACK, csize)
 
 
         draw_end = perf_counter()
