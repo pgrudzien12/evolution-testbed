@@ -2,7 +2,7 @@ from time import perf_counter
 import sys
 import pygame
 import numpy as np
-from evolution import Evolution
+from evolution.evolution import Evolution
 
 # started from this gist: https://gist.github.com/bennuttall/6952575
 # big thanks for the original author: Ben Nuttall
