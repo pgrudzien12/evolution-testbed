@@ -1,22 +1,13 @@
-from time import sleep, perf_counter
+from time import perf_counter
 import sys
 import pygame
 import numpy as np
 from evolution import Evolution
 
 def createScreen():
-    print('available resolutions', pygame.display.list_modes(0))
-    #@todo make this a command line switch
-    #the next two lines set up full screen options, to run in a window see below
-    screen_width, screen_height = (600,600)# pygame.display.list_modes(0)[0] 
-    # we use the 1st resolution which is the largest, and ought to give us the full multi-monitor
+    screen_width, screen_height = (600,600)
     options = pygame.HWSURFACE | pygame.DOUBLEBUF        
-    
-    #the next two lines set up windowed options - swap these with above to run full screen instead
-    #screen_width, screen_height = (600,600)
-    #options=0
-    
-    #create the screen with the options
+  
     screen = pygame.display.set_mode(
         (screen_width, screen_height), options)
     print("screen created, size is:", screen.get_size())
@@ -29,26 +20,21 @@ def make_empty_grid(x, y):
 BLACK = (0, 0, 0)
 
 def draw_block(x, y, XY, alive_color, size):
-    #cell_size=(2,2)
     center_point = (XY[0][x], XY[1][y])
-    #u = x * cell_size[0] + (cell_size[0] // 2)
-    #w = x * cell_size[0] + (cell_size[0] // 2)
     pygame.draw.circle(screen, alive_color, center_point, size)
 
-#this is where we register our event listeners
-#yes, we're just calling methods
-#@todo create proper event listeners
+
 def handleInputEvents():
     reinitialize = False
     for event in pygame.event.get():
-        if(event.type == pygame.MOUSEBUTTONDOWN):
-            if(event.button==1): #left click
-                reinitialize = True
         if(event.type == pygame.KEYDOWN):
             sys.exit(0) #quit on any key
         if (event.type == pygame.QUIT):  #pygame issues a quit event, for e.g. by closing the window
             print("quitting")
             sys.exit(0)
+        if(event.type == pygame.MOUSEBUTTONDOWN):
+            if(event.button==1): #left click
+                reinitialize = True
     return reinitialize
 
 def precompute_centers(cell_size, world_size):
@@ -75,9 +61,6 @@ def main():
     alive_color.hsva = [h, 100, 100]
     cell_size = np.array((xmax // world_size[0], ymax // world_size[1]))
     XY = precompute_centers(cell_size, world_size)
-    #xlen = xmax // cell_size[0]
-    #ylen = ymax // cell_size[1]
-    #global world
     xored = make_empty_grid(*world_size)
     buf1 = make_empty_grid(*world_size)
     buf2 = make_empty_grid(*world_size)
@@ -94,6 +77,8 @@ def main():
             buf2 = make_empty_grid(*world_size)
             e.initialize(buf1)
             first_buf = True
+            screen.fill((BLACK))
+
 
         handle = perf_counter()
 
