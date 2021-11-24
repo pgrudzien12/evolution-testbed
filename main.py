@@ -2,13 +2,13 @@ from time import sleep, perf_counter
 import sys
 import pygame
 import numpy as np
-from gol import Evolution
+from evolution import Evolution
 
 def createScreen():
     print('available resolutions', pygame.display.list_modes(0))
     #@todo make this a command line switch
     #the next two lines set up full screen options, to run in a window see below
-    screen_width, screen_height = (800,600)# pygame.display.list_modes(0)[0] 
+    screen_width, screen_height = (600,600)# pygame.display.list_modes(0)[0] 
     # we use the 1st resolution which is the largest, and ought to give us the full multi-monitor
     options = pygame.HWSURFACE | pygame.DOUBLEBUF        
     
@@ -84,7 +84,6 @@ def main():
     first_buf = True
     e = Evolution(world_size)
     e.initialize(buf1)
-    duration = 0
     i = 0
     while True:
         start = perf_counter()
@@ -106,14 +105,16 @@ def main():
             buf = buf1
 
         draw_start = perf_counter()
-        alive_w = np.argwhere(world > 0)
-        # np.logical_xor(world, buf, out=xored)
-        # change = np.argwhere(xored > 0)
+        np.logical_xor(world, buf, out=xored)
+        change = np.argwhere(xored > 0)
 
-        screen.fill((BLACK))
         csize = min(cell_size) / 2
-        for x,y in alive_w:
-            draw_block(x, y, XY, alive_color, csize)
+        for x,y in change:
+            if world[x,y] > 0: #born
+                draw_block(x, y, XY, alive_color, csize)
+            else: # died
+                draw_block(x, y, XY, BLACK, csize)
+
 
         draw_end = perf_counter()
         pygame.display.flip()
@@ -131,8 +132,7 @@ def main():
         clock.tick(40)
 
         end = perf_counter()
-        duration += end - start
-        print(f"Perf:{(duration / i):.4f} last {(end-start):.4f}, handleInput {(handle-start):.4f},draw:{(draw_end-draw_start):.4f} flip:{(flip_end-draw_end):.4f} evolution:{(evolve_end-evolve_start):.4f} rest:{(end-evolve_end):.4f} ")
+        print(f"Perf {(end-start):.4f}: handleInput {(handle-start):.4f} draw:{(draw_end-draw_start):.4f} flip:{(flip_end-draw_end):.4f} evolution:{(evolve_end-evolve_start):.4f} filler:{(end-evolve_end):.4f} ")
         #print(f"Perf:{(end-start):.4f} handleInput {(handle-start):.4f},draw:{(draw_end-start):.4f} evolution:{(evolve_end-start):.4f} ")
 
 if __name__ == '__main__':
