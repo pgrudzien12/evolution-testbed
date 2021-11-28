@@ -29,19 +29,27 @@ class Evolution():
         g = randint(0,2,size=grid.shape, dtype=grid.dtype)
         np.copyto(grid, g)
 
-    def evolve(self, grid, buffer):
+    def evolve2(self, grid, buffer):
         buffer.fill(0)
         neighbors = signal.convolve(grid, self.kernel, mode='same')
         w = np.argwhere(neighbors > 1)
+
         for r,c in w:
             cell = grid[r][c]
             n = neighbors[r, c]
             buffer[r][c] = 1 if evolve_cell(cell, n) else 0
 
-    def evolve2(self, grid, buffer):
+    def evolve(self, grid, buffer):
         buffer.fill(0)
         neighbors = signal.convolve(grid, self.kernel, mode='same')
-        #w = np.argwhere(neighbors > 0)
+        alive = grid > 0
+        n2 = neighbors == 2
+        n3 = neighbors == 3
+        buffer[n3 | (alive & n2)] = 1
+
+    def evolve3(self, grid, buffer):
+        buffer.fill(0)
+        neighbors = signal.convolve(grid, self.kernel, mode='same')
         
         x = len(grid)
         y = len(grid[0])
