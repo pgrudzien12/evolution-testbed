@@ -2,13 +2,13 @@ from time import perf_counter
 import sys
 import pygame
 import numpy as np
-from evolution.evolution import Evolution
+from gol import Evolution
 
 # started from this gist: https://gist.github.com/bennuttall/6952575
 # big thanks for the original author: Ben Nuttall
 
 def createScreen():
-    screen_width, screen_height = (600,600)
+    screen_width, screen_height = (800,800)
     options = pygame.HWSURFACE | pygame.DOUBLEBUF        
   
     screen = pygame.display.set_mode(
@@ -30,8 +30,6 @@ def draw_block(screen, x, y, XY, alive_color, size):
 def handleInputEvents():
     reinitialize = False
     for event in pygame.event.get():
-        if(event.type == pygame.KEYDOWN):
-            sys.exit(0) #quit on any key
         if (event.type == pygame.QUIT):  #pygame issues a quit event, for e.g. by closing the window
             print("quitting")
             sys.exit(0)
@@ -52,7 +50,7 @@ def precompute_centers(cell_size, world_size):
     return [X,Y]
 
 def main():
-    world_size = (300,300)
+    world_size = (200,200)
     pygame.init()
     clock = pygame.time.Clock()
     screen = createScreen()
@@ -69,6 +67,9 @@ def main():
     e = Evolution(world_size)
     e.initialize(buf1)
     i = 0
+    need_full_redraw = True
+    
+    csize = min(cell_size) / 2
     while True:
         start = perf_counter()
 
@@ -88,21 +89,30 @@ def main():
         else:
             world = buf2
             buf = buf1
-
+        no_shift = (pygame.key.get_mods() & pygame.KMOD_LSHIFT) == 0
         draw_start = perf_counter()
-        np.logical_xor(world, buf, out=xored)
-        change = np.argwhere(xored > 0)
+        if no_shift:
+            if need_full_redraw:
+                need_full_redraw = False
+                screen.fill((BLACK))
+                
+                change = np.argwhere(world > 0)
+            else:
+                np.logical_xor(world, buf, out=xored)
+                change = np.argwhere(xored > 0)
 
-        csize = min(cell_size) / 2
-        for x,y in change:
-            if world[x,y] > 0: #born
-                draw_block(screen, x, y, XY, alive_color, csize)
-            else: # died
-                draw_block(screen, x, y, XY, BLACK, csize)
-
+            for x,y in change:
+                if world[x,y] > 0: #born
+                    draw_block(screen, x, y, XY, alive_color, csize)
+                else: # died
+                    draw_block(screen, x, y, XY, BLACK, csize)
+        else:
+            need_full_redraw = True
 
         draw_end = perf_counter()
-        pygame.display.flip()
+        
+        if no_shift:
+            pygame.display.flip()
 
         flip_end = perf_counter()
         h = (h + 2) % 360
@@ -114,7 +124,9 @@ def main():
         evolve_end = perf_counter()
 
         first_buf = not first_buf
-        clock.tick(40)
+        
+        if no_shift:
+            clock.tick(20)
 
         end = perf_counter()
         print(f"Perf {(end-start):.4f}: handleInput {(handle-start):.4f} draw:{(draw_end-draw_start):.4f} flip:{(flip_end-draw_end):.4f} evolution:{(evolve_end-evolve_start):.4f} filler:{(end-evolve_end):.4f} ")
@@ -122,3 +134,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    print("done")
